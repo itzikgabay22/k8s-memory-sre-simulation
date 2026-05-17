@@ -16,31 +16,31 @@ spec:
         app.kubernetes.io/name: memory-hungry-api
     spec:
       containers:
-        - name: api
-          image: memory-hungry-api:local
-          imagePullPolicy: IfNotPresent
-          env:
-            - name: MEMORY_ALLOC_MB
-              value: "96"
-          ports:
-            - name: http
-              containerPort: 8080
-          readinessProbe:
-            httpGet:
-              path: /readyz
-              port: http
-            initialDelaySeconds: 2
-            periodSeconds: 5
-          livenessProbe:
-            httpGet:
-              path: /healthz
-              port: http
-            initialDelaySeconds: 10
-            periodSeconds: 10
-          resources:
-            requests:
-              cpu: 50m
-              memory: 32Mi
-            limits:
-              cpu: 250m
-              memory: 64Mi
+      - name: api
+        image: memory-hungry-api:local
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MEMORY_ALLOC_MB
+          value: '96'
+        ports:
+        - name: http
+          containerPort: 8080
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: http
+          initialDelaySeconds: 2
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          requests:
+            cpu: 50m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi
