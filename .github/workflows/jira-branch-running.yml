@@ -1,0 +1,60 @@
+name: Jira Branch Running
+
+on:
+  create:
+  pull_request:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+jobs:
+  transition-branch-ticket:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Jira key from branch
+        id: key
+        shell: bash
+        run: |
+          set -euo pipefail
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME:-}}"
+          KEY="$(echo "$BRANCH" | grep -Eo '[A-Z][A-Z0-9]+-[0-9]+' | head -1 || true)"
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Transition Jira issue to running
+        if: steps.key.outputs.key != ''
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          JIRA_KEY: ${{ steps.key.outputs.key }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$JIRA_BASE_URL"
+          test -n "$JIRA_EMAIL"
+          test -n "$JIRA_API_TOKEN"
+
+          TRANSITIONS="$(curl -fsS \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            -H "Accept: application/json" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions")"
+
+          TRANSITION_ID="$(echo "$TRANSITIONS" | jq -r '
+            .transitions[]
+            | select((.name | ascii_downcase) == "running"
+              or (.name | ascii_downcase) == "in progress"
+              or (.to.name | ascii_downcase) == "running"
+              or (.to.name | ascii_downcase) == "in progress")
+            | .id
+          ' | head -1)"
+
+          if [[ -z "$TRANSITION_ID" || "$TRANSITION_ID" == "null" ]]; then
+            echo "No Running/In Progress transition available for $JIRA_KEY"
+            exit 0
+          fi
+
+          curl -fsS \
+            -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data "{\"transition\":{\"id\":\"$TRANSITION_ID\"}}" \
+            "$JIRA_BASE_URL/rest/api/3/issue/$JIRA_KEY/transitions"

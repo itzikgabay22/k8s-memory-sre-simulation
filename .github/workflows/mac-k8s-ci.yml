@@ -1,0 +1,23 @@
+name: Mac Kubernetes CI
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Local Kubernetes target"
+        required: true
+        default: "docker-desktop"
+        type: choice
+        options:
+          - docker-desktop
+          - minikube
+
+jobs:
+  deploy-local-k8s:
+    runs-on: [self-hosted, macOS]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy simulation to local Kubernetes
+        run: ./scripts/deploy-local.sh "${{ inputs.target }}"
+      - name: Show failure evidence
+        run: ./scripts/watch-failure.sh
