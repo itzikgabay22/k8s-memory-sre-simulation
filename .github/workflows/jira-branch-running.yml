@@ -28,9 +28,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test -n "$JIRA_BASE_URL"
-          test -n "$JIRA_EMAIL"
-          test -n "$JIRA_API_TOKEN"
+          if [[ -z "$JIRA_BASE_URL" || -z "$JIRA_EMAIL" || -z "$JIRA_API_TOKEN" ]]; then
+            echo "Jira secrets are not configured; skipping transition for $JIRA_KEY."
+            exit 0
+          fi
 
           TRANSITIONS="$(curl -fsS \
             -u "$JIRA_EMAIL:$JIRA_API_TOKEN" \

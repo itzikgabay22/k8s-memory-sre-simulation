@@ -21,5 +21,9 @@ Set these repository secrets in GitHub:
 The workflow discovers the correct transition dynamically by looking for transition or
 destination status names equal to `Running` or `In Progress`.
 
+If the secrets are not configured, the workflow exits successfully and prints a skip
+message. This keeps external PR checks green while still enabling Jira automation after
+the repository secrets are added.
+
 For this Jira project, `KAN-26` currently exposes `In Progress` as transition id `21`,
 but the workflow does not hardcode that id.
